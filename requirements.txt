@@ -1,0 +1,11 @@
+# Core dependencies
+numpy>=1.15.0
+matplotlib>=3.0.0
+z3-solver>=4.8.0
+
+# Performance and UI dependencies
+tqdm>=4.60.0  # Progress bars for parallel processing
+
+# Optional: Advanced performance optimizations
+# Uncomment the line below for JIT compilation (5-10x speedup in numerical operations)
+# numba>=0.56.0

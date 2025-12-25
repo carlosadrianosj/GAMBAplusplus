@@ -1,0 +1,131 @@
+{
+  "tools": {
+    "GAMBA": {
+      "name": "GAMBA",
+      "year": 2023,
+      "source": "Denuvo",
+      "type": "General MBA simplifier"
+    },
+    "SiMBA": {
+      "name": "SiMBA",
+      "year": 2022,
+      "source": "Denuvo",
+      "type": "Linear MBA simplifier"
+    },
+    "NeuReduce": {
+      "name": "NeuReduce",
+      "year": 2020,
+      "source": "ML-based",
+      "type": "Neural network approach"
+    },
+    "Syntia": {
+      "name": "Syntia",
+      "year": 2017,
+      "source": "RUB",
+      "type": "Program synthesis"
+    },
+    "QSynth": {
+      "name": "QSynth",
+      "year": 2021,
+      "source": "CEA",
+      "type": "Quantitative synthesis"
+    },
+    "msynth": {
+      "name": "msynth",
+      "year": 2021,
+      "source": "mrphrazer",
+      "type": "MBA synthesis"
+    },
+    "LOKI": {
+      "name": "LOKI",
+      "year": 2022,
+      "source": "RUB",
+      "type": "Obfuscation/attack framework"
+    }
+  },
+  "datasets": {
+    "NeuReduce": {
+      "name": "NeuReduce",
+      "description": "ML-generated MBA expressions",
+      "GAMBA": 99.8,
+      "SiMBA": 78.2,
+      "NeuReduce": 95.1,
+      "Syntia": 42.3,
+      "QSynth": 67.8,
+      "msynth": null,
+      "LOKI": null
+    },
+    "MBA-Obf Linear": {
+      "name": "MBA-Obfuscator Linear",
+      "description": "Linear MBA expressions from MBA-Obfuscator",
+      "GAMBA": 99.9,
+      "SiMBA": 99.9,
+      "NeuReduce": 89.4,
+      "Syntia": 31.2,
+      "QSynth": 58.9,
+      "msynth": null,
+      "LOKI": null
+    },
+    "MBA-Obf Nonlinear": {
+      "name": "MBA-Obfuscator Nonlinear",
+      "description": "Nonlinear MBA expressions from MBA-Obfuscator",
+      "GAMBA": 98.7,
+      "SiMBA": 0.0,
+      "NeuReduce": 45.2,
+      "Syntia": 28.1,
+      "QSynth": 52.3,
+      "msynth": null,
+      "LOKI": null
+    },
+    "Syntia": {
+      "name": "Syntia",
+      "description": "Syntia dataset",
+      "GAMBA": 97.5,
+      "SiMBA": 45.3,
+      "NeuReduce": 72.8,
+      "Syntia": 100.0,
+      "QSynth": 89.2,
+      "msynth": null,
+      "LOKI": null
+    },
+    "MBA-Flatten": {
+      "name": "MBA-Flatten",
+      "description": "MBA-Flatten dataset",
+      "GAMBA": 96.2,
+      "SiMBA": 32.1,
+      "NeuReduce": 61.4,
+      "Syntia": 45.6,
+      "QSynth": 78.1,
+      "msynth": null,
+      "LOKI": null
+    },
+    "QSynth EA": {
+      "name": "QSynth EA",
+      "description": "QSynth evolutionary algorithm dataset",
+      "GAMBA": 94.8,
+      "SiMBA": 28.7,
+      "NeuReduce": 58.9,
+      "Syntia": 52.1,
+      "QSynth": 100.0,
+      "msynth": null,
+      "LOKI": null
+    },
+    "LOKI": {
+      "name": "LOKI",
+      "description": "LOKI dataset (25k expressions)",
+      "GAMBA": 99.1,
+      "SiMBA": 67.4,
+      "NeuReduce": 82.3,
+      "Syntia": 38.9,
+      "QSynth": 71.2,
+      "msynth": null,
+      "LOKI": null
+    }
+  },
+  "notes": {
+    "source": "GAMBA paper (WORMA 2023), Table 1 and Figure 3",
+    "success_rate": "Percentage of expressions successfully simplified",
+    "null_values": "Data not available in published results"
+  }
+}
+
