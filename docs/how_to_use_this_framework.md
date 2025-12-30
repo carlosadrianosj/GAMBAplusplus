@@ -4,11 +4,123 @@ This comprehensive guide provides detailed examples and diagrams for using GAMBA
 
 ## Table of Contents
 
-1. [Direct Expression Input](#1-direct-expression-input)
-2. [File-Based Input](#2-file-based-input)
-3. [Assembly Interpretation](#3-assembly-interpretation)
-4. [Advanced Usage Patterns](#4-advanced-usage-patterns)
-5. [Performance Optimization](#5-performance-optimization)
+1. [Docker Setup](#0-docker-setup)
+2. [Direct Expression Input](#1-direct-expression-input)
+3. [File-Based Input](#2-file-based-input)
+4. [Assembly Interpretation](#3-assembly-interpretation)
+5. [Advanced Usage Patterns](#4-advanced-usage-patterns)
+6. [Performance Optimization](#5-performance-optimization)
+
+---
+
+## 0. Docker Setup
+
+GAMBA++ can be run using Docker for easy deployment and scalability. This is the recommended approach for production environments.
+
+### 0.1 Building the Docker Image
+
+```bash
+# Build the Docker image
+docker build -t gamba-plusplus:latest .
+```
+
+### 0.2 Running with Docker Compose (Recommended)
+
+Docker Compose provides an easy way to run and scale GAMBA++:
+
+```bash
+# Start the services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Scale workers (for parallel processing)
+docker-compose up -d --scale gamba-worker=4
+
+# Stop services
+docker-compose down
+```
+
+### 0.3 Running a Single Container
+
+```bash
+# Run interactively
+docker run -it --rm \
+  -v $(pwd)/cache:/app/cache \
+  -v $(pwd)/output:/app/output \
+  -v $(pwd)/benchmarks/datasets:/app/benchmarks/datasets:ro \
+  gamba-plusplus:latest \
+  python -c "from optimization.batch_advanced import process_expressions_batch_advanced; print('GAMBA++ ready!')"
+
+# Run with Python script
+docker run --rm \
+  -v $(pwd)/cache:/app/cache \
+  -v $(pwd)/output:/app/output \
+  -v $(pwd)/your_script.py:/app/script.py \
+  gamba-plusplus:latest \
+  python script.py
+```
+
+### 0.4 Using GAMBA++ Inside Docker
+
+Once inside a container, you can use GAMBA++ exactly as you would locally:
+
+```python
+# Inside Docker container
+from optimization.batch_advanced import process_expressions_batch_advanced
+
+expressions = [
+    "(x ^ y) + 2*(x & y)",
+    "(x | y) - (x & y)",
+]
+
+results = process_expressions_batch_advanced(
+    expressions=expressions,
+    bitcount=32,
+    max_workers=8,
+    use_cache=True,
+    show_progress=True
+)
+
+for result in results:
+    if result["success"]:
+        print(f"{result['original']} -> {result['simplified']}")
+```
+
+### 0.5 Volume Mounts
+
+The Docker setup uses the following volume mounts:
+
+- `/app/cache` - Cache directory for GAMBA results (persistent)
+- `/app/output` - Output directory for results
+- `/app/benchmarks/datasets` - Read-only access to benchmark datasets
+
+### 0.6 Environment Variables
+
+You can customize the Docker container behavior with environment variables:
+
+```bash
+# Set maximum workers
+docker run -e MAX_WORKERS=16 gamba-plusplus:latest
+
+# Enable worker mode
+docker run -e WORKER_MODE=true gamba-plusplus:latest
+```
+
+### 0.7 Scaling for Production
+
+For production deployments, use Docker Compose with multiple workers:
+
+```yaml
+# docker-compose.yml
+services:
+  gamba-worker:
+    deploy:
+      replicas: 4  # Run 4 worker instances
+```
+
+This allows GAMBA++ to process expressions in parallel across multiple containers, significantly improving throughput for large workloads.
 
 ---
 

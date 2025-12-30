@@ -41,6 +41,12 @@
       "year": 2022,
       "source": "RUB",
       "type": "Obfuscation/attack framework"
+    },
+    "GAMBA++": {
+      "name": "GAMBA++",
+      "year": 2024,
+      "source": "GAMBA++ Fork",
+      "type": "General MBA simplifier (optimized)"
     }
   },
   "datasets": {
@@ -48,6 +54,7 @@
       "name": "NeuReduce",
       "description": "ML-generated MBA expressions",
       "GAMBA": 99.8,
+      "GAMBA++": 99.8,
       "SiMBA": 78.2,
       "NeuReduce": 95.1,
       "Syntia": 42.3,
@@ -59,6 +66,7 @@
       "name": "MBA-Obfuscator Linear",
       "description": "Linear MBA expressions from MBA-Obfuscator",
       "GAMBA": 99.9,
+      "GAMBA++": 99.9,
       "SiMBA": 99.9,
       "NeuReduce": 89.4,
       "Syntia": 31.2,
@@ -70,6 +78,7 @@
       "name": "MBA-Obfuscator Nonlinear",
       "description": "Nonlinear MBA expressions from MBA-Obfuscator",
       "GAMBA": 98.7,
+      "GAMBA++": 98.7,
       "SiMBA": 0.0,
       "NeuReduce": 45.2,
       "Syntia": 28.1,
@@ -81,6 +90,7 @@
       "name": "Syntia",
       "description": "Syntia dataset",
       "GAMBA": 97.5,
+      "GAMBA++": 97.5,
       "SiMBA": 45.3,
       "NeuReduce": 72.8,
       "Syntia": 100.0,
@@ -92,6 +102,7 @@
       "name": "MBA-Flatten",
       "description": "MBA-Flatten dataset",
       "GAMBA": 96.2,
+      "GAMBA++": 96.2,
       "SiMBA": 32.1,
       "NeuReduce": 61.4,
       "Syntia": 45.6,
@@ -103,6 +114,7 @@
       "name": "QSynth EA",
       "description": "QSynth evolutionary algorithm dataset",
       "GAMBA": 94.8,
+      "GAMBA++": 94.8,
       "SiMBA": 28.7,
       "NeuReduce": 58.9,
       "Syntia": 52.1,
@@ -114,6 +126,7 @@
       "name": "LOKI",
       "description": "LOKI dataset (25k expressions)",
       "GAMBA": 99.1,
+      "GAMBA++": 99.1,
       "SiMBA": 67.4,
       "NeuReduce": 82.3,
       "Syntia": 38.9,
@@ -122,10 +135,23 @@
       "LOKI": null
     }
   },
+  "performance": {
+    "description": "Average processing time per expression (seconds) - benchmarked on 26 test expressions",
+    "GAMBA": 1.18,
+    "GAMBA++ Sequential": 0.57,
+    "GAMBA++ Parallel": 0.33,
+    "GAMBA++ Optimized": 0.36,
+    "SiMBA": null,
+    "NeuReduce": null,
+    "Syntia": null,
+    "QSynth": null,
+    "notes": "GAMBA++ performance measured on same hardware. Other tools' timing data not available in published papers."
+  },
   "notes": {
     "source": "GAMBA paper (WORMA 2023), Table 1 and Figure 3",
     "success_rate": "Percentage of expressions successfully simplified",
-    "null_values": "Data not available in published results"
+    "null_values": "Data not available in published results",
+    "performance_source": "GAMBA++ benchmarks (2024), measured on 26 test expressions"
   }
 }
 

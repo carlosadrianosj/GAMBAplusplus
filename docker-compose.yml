@@ -1,0 +1,36 @@
+services:
+  gamba-plusplus:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gamba-plusplus:latest
+    container_name: gamba-plusplus
+    volumes:
+      - ./cache:/app/cache
+      - ./output:/app/output
+      - ./benchmarks/datasets:/app/benchmarks/datasets:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MAX_WORKERS=8
+    restart: unless-stopped
+    command: tail -f /dev/null  # Keep container running for interactive use
+
+  # Worker service for parallel processing (scalable)
+  gamba-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gamba-plusplus:latest
+    volumes:
+      - ./cache:/app/cache
+      - ./output:/app/output
+      - ./benchmarks/datasets:/app/benchmarks/datasets:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MAX_WORKERS=4
+      - WORKER_MODE=true
+    restart: unless-stopped
+    deploy:
+      replicas: 2  # Scale to 2 workers by default
+    command: tail -f /dev/null
+

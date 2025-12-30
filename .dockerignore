@@ -1,0 +1,49 @@
+# Git
+.git/
+.gitignore
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Cache files
+*.cache
+.cache/
+.gamba_cache.json
+.test_cache*.json
+.benchmark_cache*.json
+.quick_compare_cache*.json
+benchmarks/json-compare/*.json
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Documentation (optional - uncomment if you want to exclude)
+# docs/
+
+# Benchmarks charts (optional - uncomment if you want to exclude)
+# benchmarks/charts/
+
