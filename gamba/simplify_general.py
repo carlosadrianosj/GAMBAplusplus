@@ -634,26 +634,47 @@ class GeneralSimplifier():
     # Simplify the given MBA.
     # Note: only one underscore, for MacOS support, see https://github.com/DenuvoSoftwareSolutions/GAMBA/issues/1
     def _simplify(self, expr, returnDict):
-        root = parse(expr, self.__bitCount, self.__modRed, True, True)
-        if root == None: sys.exit("Error: Could not parse expression!")
+        try:
+            root = parse(expr, self.__bitCount, self.__modRed, True, True)
+            if root == None:
+                # Store error in returnDict instead of sys.exit()
+                returnDict['error'] = "Error: Could not parse expression!"
+                returnDict[0] = None
+                return
 
-        self.__simplify_subexpression(root, None)
+            self.__simplify_subexpression(root, None)
 
-        root.polish()
-        returnDict[0] = root
+            root.polish()
+            returnDict[0] = root
+            returnDict['error'] = None
+        except Exception as e:
+            # Catch any exceptions and store in returnDict
+            returnDict['error'] = f"Exception during simplification: {str(e)}"
+            returnDict[0] = None
 
     # Simplify the given MBA and check the result if required.
-    def simplify(self, expr, useZ3=False):
+    def simplify(self, expr, useZ3=False, timeout=120):
+        """
+        Simplify expression with configurable timeout.
+        
+        Args:
+            expr: Expression to simplify
+            useZ3: Enable Z3 verification
+            timeout: Timeout in seconds (default: 120 for better success rate)
+        
+        Returns:
+            Simplified expression string, or empty string if simplification fails
+        """
         manager = multiprocessing.Manager()
         returnDict = manager.dict()
         p = multiprocessing.Process(target=self._simplify, args=(expr, returnDict))
         p.start()
-        # Wait for 30 seconds or until process finishes
-        p.join(30)
+        # Wait for timeout seconds or until process finishes
+        p.join(timeout)
 
         # If thread is still active
         if p.is_alive():
-            print("timed out... kill process...")
+            print(f"timed out after {timeout}s... kill process...")
 
             # Terminate - may not work if process is stuck for good
             #p.terminate()
@@ -663,13 +684,24 @@ class GeneralSimplifier():
             p.join()
             return ""
 
-        if len(returnDict.values()) == 0: sys.exit("No simplification result!")
-
-        root = returnDict.values()[0]
+        if len(returnDict.values()) == 0:
+            # Don't sys.exit() - return empty string instead for better error handling
+            return ""
+        
+        # Check for error in returnDict
+        if 'error' in returnDict and returnDict['error']:
+            print(f"Simplification error: {returnDict['error']}")
+            return ""
+        
+        root = returnDict.get(0)
+        if root is None:
+            return ""
+        
         simpl = root.to_string()
 
         if useZ3 and not self.__verify_using_z3(expr, simpl):
-            sys.exit("Error in simplification! Simplified expression is not proved equivalent to original one!")
+            # Don't sys.exit() - return empty string instead
+            return ""
 
         return simpl if self.__check_verify(expr, root) else ""
 

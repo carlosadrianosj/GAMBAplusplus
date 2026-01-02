@@ -1,0 +1,56 @@
+{
+  "architecture": "x86_64",
+  "summary": {
+    "instruction_count": 77,
+    "mba_block_count": 0,
+    "expression_count": 0,
+    "simplified_count": 0,
+    "basic_block_count": 13,
+    "function_count": 8
+  },
+  "mba_blocks": [],
+  "expressions": [],
+  "simplified_blocks": [],
+  "functions": [
+    {
+      "name": "main",
+      "start": 0,
+      "end": 100
+    },
+    {
+      "name": "mba_arithmetic_boolean",
+      "start": 128,
+      "end": 228
+    },
+    {
+      "name": "mba_boolean_chain",
+      "start": 64,
+      "end": 164
+    },
+    {
+      "name": "mba_comparison",
+      "start": 96,
+      "end": 196
+    },
+    {
+      "name": "mba_rotate",
+      "start": 32,
+      "end": 132
+    },
+    {
+      "name": "mba_shift",
+      "start": 16,
+      "end": 116
+    },
+    {
+      "name": "mba_simple",
+      "start": 0,
+      "end": 100
+    },
+    {
+      "name": "mba_stack",
+      "start": 160,
+      "end": 260
+    }
+  ]
+}

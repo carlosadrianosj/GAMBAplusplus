@@ -52,17 +52,18 @@ def parse_assembly_file(asm_file: Path, arch: str = "arm64") -> List[Instruction
     with open(asm_file, 'r') as f:
         lines = f.readlines()
     
-    # Pattern to match: 0xADDRESS: instruction
-    # Example: 0x10000: add    w0, w1, w2
+    # Pattern to match objdump format: ADDRESS: HEXCODE mnemonic operands
+    # Example: 0:	0a010002 	and	w2, w0, w1
+    # Or IDA format: 0xADDRESS: mnemonic operands
     instruction_pattern = re.compile(
-        r'^(0x[0-9a-fA-F]+):\s+(.+)$'
+        r'^([0-9a-fA-F]+):\s+(.+)$'
     )
     
     for line_num, line in enumerate(lines, 1):
         line = line.strip()
         
-        # Skip comments and empty lines
-        if not line or line.startswith(';') or line.startswith('#'):
+        # Skip comments, empty lines, and function labels
+        if not line or line.startswith(';') or line.startswith('#') or line.startswith('<') and line.endswith('>:'):
             continue
         
         # Try to match instruction pattern
@@ -74,17 +75,34 @@ def parse_assembly_file(asm_file: Path, arch: str = "arm64") -> List[Instruction
         instruction_str = match.group(2).strip()
         
         try:
-            address = int(address_str, 16)
+            # Handle both 0x prefix and plain hex
+            if address_str.startswith('0x'):
+                address = int(address_str, 16)
+            else:
+                address = int(address_str, 16)
         except ValueError:
             continue
         
-        # Parse instruction into mnemonic and operands
-        parts = instruction_str.split(None, 1)
+        # Handle objdump format: HEXCODE mnemonic operands
+        # Example: "0a010002 	and	w2, w0, w1"
+        # Split by whitespace - first part might be hex code
+        parts = instruction_str.split()
         if not parts:
             continue
         
-        mnemonic = parts[0]
-        operands_str = parts[1] if len(parts) > 1 else ""
+        # Check if first part is a hex code (8 hex digits for ARM)
+        first_part = parts[0]
+        if len(first_part) == 8 and all(c in '0123456789abcdefABCDEF' for c in first_part):
+            # It's a hex code, skip it and use next part as mnemonic
+            if len(parts) > 1:
+                mnemonic = parts[1]
+                operands_str = ' '.join(parts[2:]) if len(parts) > 2 else ""
+            else:
+                continue
+        else:
+            # It's the mnemonic directly
+            mnemonic = first_part
+            operands_str = ' '.join(parts[1:]) if len(parts) > 1 else ""
         
         # Parse operands (split by comma, handle brackets and braces)
         operands = parse_operands(operands_str)

@@ -1,0 +1,51 @@
+{
+  "architecture": "arm64",
+  "summary": {
+    "instruction_count": 55,
+    "mba_block_count": 0,
+    "expression_count": 0,
+    "simplified_count": 0,
+    "basic_block_count": 12,
+    "function_count": 7
+  },
+  "mba_blocks": [],
+  "expressions": [],
+  "simplified_blocks": [],
+  "functions": [
+    {
+      "name": "main",
+      "start": 0,
+      "end": 100
+    },
+    {
+      "name": "mba_arithmetic_boolean",
+      "start": 80,
+      "end": 180
+    },
+    {
+      "name": "mba_bitfield",
+      "start": 32,
+      "end": 132
+    },
+    {
+      "name": "mba_boolean_chain",
+      "start": 64,
+      "end": 164
+    },
+    {
+      "name": "mba_conditional",
+      "start": 48,
+      "end": 148
+    },
+    {
+      "name": "mba_embedded_shift",
+      "start": 16,
+      "end": 116
+    },
+    {
+      "name": "mba_simple",
+      "start": 0,
+      "end": 100
+    }
+  ]
+}

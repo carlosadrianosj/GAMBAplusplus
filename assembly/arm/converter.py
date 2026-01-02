@@ -151,12 +151,14 @@ def convert_instruction_to_expression(inst: Instruction, tracker: RegisterTracke
         return None
     
     # ADD: add dst, src1, src2 -> dst = src1 + src2
+    # Supports embedded shifts: add x0, x1, x2, lsl #3
     elif mnemonic == 'add':
         if len(inst.operands) >= 3:
             dst = normalize_register_name(inst.operands[0])
             src1 = inst.operands[1]
             src2 = inst.operands[2]
             
+            # get_operand_expression handles embedded shifts automatically
             src1_expr = get_operand_expression(src1, tracker)
             src2_expr = get_operand_expression(src2, tracker)
             
@@ -176,6 +178,7 @@ def convert_instruction_to_expression(inst: Instruction, tracker: RegisterTracke
             return expr
     
     # SUB: sub dst, src1, src2 -> dst = src1 - src2
+    # Supports embedded shifts
     elif mnemonic == 'sub':
         if len(inst.operands) >= 3:
             dst = normalize_register_name(inst.operands[0])
@@ -351,17 +354,190 @@ def convert_instruction_to_expression(inst: Instruction, tracker: RegisterTracke
             tracker.set_register(dst, expr)
             return expr
     
+    # Bitfield instructions (AArch64)
+    # UBFX: ubfx dst, src, lsb, width -> dst = (src >> lsb) & ((1 << width) - 1)
+    elif mnemonic == 'ubfx':
+        if len(inst.operands) >= 4:
+            dst = normalize_register_name(inst.operands[0])
+            src = inst.operands[1]
+            lsb = extract_constant(inst.operands[2])
+            width = extract_constant(inst.operands[3])
+            
+            if lsb is not None and width is not None:
+                src_expr = get_operand_expression(src, tracker)
+                mask = (1 << width) - 1
+                expr = f"(({src_expr} >> {lsb}) & {hex(mask)})"
+                tracker.set_register(dst, expr)
+                return expr
+    
+    # SBFX: sbfx dst, src, lsb, width -> signed bitfield extract
+    elif mnemonic == 'sbfx':
+        if len(inst.operands) >= 4:
+            dst = normalize_register_name(inst.operands[0])
+            src = inst.operands[1]
+            lsb = extract_constant(inst.operands[2])
+            width = extract_constant(inst.operands[3])
+            
+            if lsb is not None and width is not None:
+                src_expr = get_operand_expression(src, tracker)
+                mask = (1 << width) - 1
+                # Sign-extend: extract, shift left to sign bit, then arithmetic shift right
+                expr = f"((({src_expr} >> {lsb}) & {hex(mask)}) << (32 - {lsb} - {width})) >> (32 - {lsb} - {width})"
+                tracker.set_register(dst, expr)
+                return expr
+    
+    # BFI: bfi dst, src, lsb, width -> bitfield insert
+    elif mnemonic == 'bfi':
+        if len(inst.operands) >= 4:
+            dst = normalize_register_name(inst.operands[0])
+            src = inst.operands[1]
+            lsb = extract_constant(inst.operands[2])
+            width = extract_constant(inst.operands[3])
+            
+            if lsb is not None and width is not None:
+                dst_expr = tracker.get_register(dst) or dst
+                src_expr = get_operand_expression(src, tracker)
+                mask = ((1 << width) - 1) << lsb
+                # Clear bits in dst, then insert src
+                expr = f"(({dst_expr} & {hex(~mask)}) | (({src_expr} & {hex((1 << width) - 1)}) << {lsb}))"
+                tracker.set_register(dst, expr)
+                return expr
+    
+    # BFXIL: bfxil dst, src, lsb, width -> bitfield extract and insert low
+    elif mnemonic == 'bfxil':
+        if len(inst.operands) >= 4:
+            dst = normalize_register_name(inst.operands[0])
+            src = inst.operands[1]
+            lsb = extract_constant(inst.operands[2])
+            width = extract_constant(inst.operands[3])
+            
+            if lsb is not None and width is not None:
+                dst_expr = tracker.get_register(dst) or dst
+                src_expr = get_operand_expression(src, tracker)
+                mask = (1 << width) - 1
+                # Extract from src and insert into low bits of dst
+                expr = f"(({dst_expr} & {hex(~mask)}) | (({src_expr} >> {lsb}) & {hex(mask)}))"
+                tracker.set_register(dst, expr)
+                return expr
+    
+    # EXTR: extr dst, src1, src2, lsb -> extract from concatenated src1:src2
+    elif mnemonic == 'extr':
+        if len(inst.operands) >= 4:
+            dst = normalize_register_name(inst.operands[0])
+            src1 = inst.operands[1]
+            src2 = inst.operands[2]
+            lsb = extract_constant(inst.operands[3])
+            
+            if lsb is not None:
+                src1_expr = get_operand_expression(src1, tracker)
+                src2_expr = get_operand_expression(src2, tracker)
+                # Extract from concatenated register: (src1 << 32) | src2, then shift right
+                expr = f"((({src1_expr} << 32) | {src2_expr}) >> {lsb})"
+                tracker.set_register(dst, expr)
+                return expr
+    
+    # Conditional selection (AArch64)
+    # CSEL: csel dst, src1, src2, cond -> dst = cond ? src1 : src2
+    elif mnemonic == 'csel':
+        if len(inst.operands) >= 4:
+            dst = normalize_register_name(inst.operands[0])
+            src1 = inst.operands[1]
+            src2 = inst.operands[2]
+            cond = inst.operands[3].lower()  # Condition code (eq, ne, lt, gt, etc.)
+            
+            src1_expr = get_operand_expression(src1, tracker)
+            src2_expr = get_operand_expression(src2, tracker)
+            
+            # Map ARM condition codes to GAMBA expressions
+            cond_map = {
+                'eq': 'eq', 'ne': 'ne', 'cs': 'ge', 'cc': 'lt',
+                'mi': 'lt', 'pl': 'ge', 'vs': 'overflow', 'vc': 'no_overflow',
+                'hi': 'gt', 'ls': 'le', 'ge': 'ge', 'lt': 'lt',
+                'gt': 'gt', 'le': 'le', 'al': 'true', 'nv': 'false'
+            }
+            cond_expr = cond_map.get(cond, cond)
+            expr = f"ite({cond_expr}_flag, {src1_expr}, {src2_expr})"
+            tracker.set_register(dst, expr)
+            return expr
+    
+    # CSINC: csinc dst, src1, src2, cond -> dst = cond ? src1 : src2 + 1
+    elif mnemonic == 'csinc':
+        if len(inst.operands) >= 4:
+            dst = normalize_register_name(inst.operands[0])
+            src1 = inst.operands[1]
+            src2 = inst.operands[2]
+            cond = inst.operands[3].lower()
+            
+            src1_expr = get_operand_expression(src1, tracker)
+            src2_expr = get_operand_expression(src2, tracker)
+            
+            cond_map = {
+                'eq': 'eq', 'ne': 'ne', 'cs': 'ge', 'cc': 'lt',
+                'mi': 'lt', 'pl': 'ge', 'vs': 'overflow', 'vc': 'no_overflow',
+                'hi': 'gt', 'ls': 'le', 'ge': 'ge', 'lt': 'lt',
+                'gt': 'gt', 'le': 'le', 'al': 'true', 'nv': 'false'
+            }
+            cond_expr = cond_map.get(cond, cond)
+            expr = f"ite({cond_expr}_flag, {src1_expr}, ({src2_expr} + 1))"
+            tracker.set_register(dst, expr)
+            return expr
+    
+    # CSINV: csinv dst, src1, src2, cond -> dst = cond ? src1 : ~src2
+    elif mnemonic == 'csinv':
+        if len(inst.operands) >= 4:
+            dst = normalize_register_name(inst.operands[0])
+            src1 = inst.operands[1]
+            src2 = inst.operands[2]
+            cond = inst.operands[3].lower()
+            
+            src1_expr = get_operand_expression(src1, tracker)
+            src2_expr = get_operand_expression(src2, tracker)
+            
+            cond_map = {
+                'eq': 'eq', 'ne': 'ne', 'cs': 'ge', 'cc': 'lt',
+                'mi': 'lt', 'pl': 'ge', 'vs': 'overflow', 'vc': 'no_overflow',
+                'hi': 'gt', 'ls': 'le', 'ge': 'ge', 'lt': 'lt',
+                'gt': 'gt', 'le': 'le', 'al': 'true', 'nv': 'false'
+            }
+            cond_expr = cond_map.get(cond, cond)
+            expr = f"ite({cond_expr}_flag, {src1_expr}, (~{src2_expr}))"
+            tracker.set_register(dst, expr)
+            return expr
+    
+    # CSNEG: csneg dst, src1, src2, cond -> dst = cond ? src1 : -src2
+    elif mnemonic == 'csneg':
+        if len(inst.operands) >= 4:
+            dst = normalize_register_name(inst.operands[0])
+            src1 = inst.operands[1]
+            src2 = inst.operands[2]
+            cond = inst.operands[3].lower()
+            
+            src1_expr = get_operand_expression(src1, tracker)
+            src2_expr = get_operand_expression(src2, tracker)
+            
+            cond_map = {
+                'eq': 'eq', 'ne': 'ne', 'cs': 'ge', 'cc': 'lt',
+                'mi': 'lt', 'pl': 'ge', 'vs': 'overflow', 'vc': 'no_overflow',
+                'hi': 'gt', 'ls': 'le', 'ge': 'ge', 'lt': 'lt',
+                'gt': 'gt', 'le': 'le', 'al': 'true', 'nv': 'false'
+            }
+            cond_expr = cond_map.get(cond, cond)
+            expr = f"ite({cond_expr}_flag, {src1_expr}, (-{src2_expr}))"
+            tracker.set_register(dst, expr)
+            return expr
+    
     return None
 
 
 def get_operand_expression(operand: str, tracker: RegisterTracker) -> str:
     """Get expression for an operand (register, constant, or shifted register)"""
-    # Check for shift operations
+    # Check for embedded shift operations (e.g., "x1, lsl #3" or "x2, lsl x3")
     shift_type, shift_val = parse_shift_operation(operand)
     
     if shift_type:
-        # Extract base register
+        # Extract base register (before the shift)
         import re
+        # Match register at start: x0, r1, w2, etc.
         base_match = re.match(r'([xwr]\d+|[a-z]+)', operand.lower())
         if base_match:
             base_reg = normalize_register_name(base_match.group(1))
@@ -373,7 +549,12 @@ def get_operand_expression(operand: str, tracker: RegisterTracker) -> str:
                     return f"({base_expr} << {shift_val})"
                 elif shift_type == 'lsr':
                     return f"({base_expr} >> {shift_val})"
-                # asr and ror are more complex, simplified for now
+                elif shift_type == 'asr':
+                    # Arithmetic shift right (sign-extending)
+                    return f"({base_expr} >> {shift_val})"
+                elif shift_type == 'ror':
+                    # Rotate right - simplified for now
+                    return f"(({base_expr} >> {shift_val}) | (({base_expr} << (32 - {shift_val})) & (((1 << 32) - 1) ^ ((1 << (32 - {shift_val})) - 1))))"
                 return base_expr
             else:
                 # Register shift
@@ -382,6 +563,10 @@ def get_operand_expression(operand: str, tracker: RegisterTracker) -> str:
                     return f"({base_expr} << {shift_expr})"
                 elif shift_type == 'lsr':
                     return f"({base_expr} >> {shift_expr})"
+                elif shift_type == 'asr':
+                    return f"({base_expr} >> {shift_expr})"
+                elif shift_type == 'ror':
+                    return f"(({base_expr} >> {shift_expr}) | (({base_expr} << (32 - {shift_expr})) & (((1 << 32) - 1) ^ ((1 << (32 - {shift_expr})) - 1))))"
                 return base_expr
     
     # Check for constant
@@ -418,8 +603,10 @@ def convert_mba_block_to_expression(block: MBABlock) -> Optional[Dict]:
     for inst in block.instructions:
         if len(inst.operands) > 0:
             dst_reg = normalize_register_name(inst.operands[0])
-            if inst.mnemonic in ['mov', 'add', 'sub', 'mul', 'madd', 'msub', 
-                                'and', 'orr', 'eor', 'bic', 'mvn', 'eon', 'orn', 'neg']:
+            if inst.mnemonic in ['mov', 'movz', 'movn', 'movk', 'add', 'sub', 'mul', 'madd', 'msub', 
+                                'and', 'orr', 'eor', 'bic', 'mvn', 'eon', 'orn', 'neg',
+                                'ubfx', 'sbfx', 'bfi', 'bfxil', 'extr',
+                                'csel', 'csinc', 'csinv', 'csneg']:
                 defined_registers.add(dst_reg)
             
             # Check operands for input registers

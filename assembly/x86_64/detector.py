@@ -83,10 +83,23 @@ def is_arithmetic_instruction(mnemonic: str) -> bool:
     return mnemonic in arithmetic_ops
 
 
+def is_shift_instruction(mnemonic: str) -> bool:
+    """Check if instruction is a shift operation"""
+    shift_ops = {'shl', 'sal', 'shr', 'sar', 'rol', 'ror'}
+    return mnemonic in shift_ops
+
+
 def is_comparison_instruction(mnemonic: str) -> bool:
     """Check if instruction is comparison"""
-    comparison_ops = {'cmp', 'test', 'setz', 'setnz', 'setl', 'setle', 'setg', 'setge'}
-    return mnemonic in comparison_ops
+    comparison_ops = {'cmp', 'test', 'setz', 'setnz', 'setl', 'setle', 'setg', 'setge',
+                      'sete', 'setne', 'seta', 'setae', 'setb', 'setbe', 'setc', 'setnc',
+                      'seto', 'setno', 'setp', 'setnp', 'sets', 'setns'}
+    return mnemonic in comparison_ops or mnemonic.startswith('set')
+
+
+def is_conditional_move_instruction(mnemonic: str) -> bool:
+    """Check if instruction is conditional move"""
+    return mnemonic.startswith('cmov')
 
 
 def is_control_flow_instruction(mnemonic: str) -> bool:

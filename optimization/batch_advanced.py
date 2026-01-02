@@ -35,12 +35,28 @@ def _process_batch_worker(args):
     """
     expressions, bitcount, use_z3, mod_red = args
     import time
+    import sys
+    
+    # Monkey-patch sys.exit to raise exception instead of exiting
+    original_exit = sys.exit
+    def safe_exit(code=None):
+        if code is None or code == 0:
+            return
+        # Convert sys.exit() to exception
+        error_msg = str(code) if isinstance(code, str) else f"Exit code: {code}"
+        raise RuntimeError(f"GAMBA exit: {error_msg}")
+    
+    sys.exit = safe_exit
     
     results = []
+    # Use verifBitCount=None to avoid slow exhaustive verification
+    # that can cause timeouts in batch processing
     simplifier = GeneralSimplifier(bitcount, modRed=mod_red, verifBitCount=None)
     
     for expr in expressions:
         start_time = time.time()
+        error_msg = None
+        simplified = None
         
         try:
             # Quick check first
@@ -57,7 +73,17 @@ def _process_batch_worker(args):
                 continue
             
             # Process with GAMBA (reusing same simplifier)
-            simplified = simplifier.simplify(expr, useZ3=use_z3)
+            # Use increased timeout (120s) for better success rate
+            try:
+                simplified = simplifier.simplify(expr, useZ3=use_z3, timeout=120)
+            except RuntimeError as e:
+                # Caught sys.exit() converted to RuntimeError
+                error_msg = str(e).replace("GAMBA exit: ", "")
+                simplified = None
+            except Exception as e:
+                # Other exceptions during simplification
+                error_msg = str(e)
+                simplified = None
             
             elapsed = time.time() - start_time
             
@@ -71,11 +97,13 @@ def _process_batch_worker(args):
                     "early_terminated": False
                 })
             else:
+                if not error_msg:
+                    error_msg = "GAMBA returned empty result"
                 results.append({
                     "original": expr,
                     "simplified": None,
                     "success": False,
-                    "error": "GAMBA returned empty result",
+                    "error": error_msg,
                     "processing_time": elapsed,
                     "early_terminated": False
                 })
@@ -89,6 +117,9 @@ def _process_batch_worker(args):
                 "processing_time": time.time() - start_time,
                 "early_terminated": False
             })
+    
+    # Restore original sys.exit
+    sys.exit = original_exit
     
     return results
 

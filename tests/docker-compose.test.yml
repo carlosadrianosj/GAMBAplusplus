@@ -1,0 +1,17 @@
+services:
+  test-runner:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: gamba-plusplus:latest
+    container_name: gamba-test-runner
+    volumes:
+      - ../tests:/tests
+      - ../output:/output
+      - ../cache:/app/cache
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TEST_ARCH=${TEST_ARCH:-all}
+    command: python /tests/run_all_tests.py
+    working_dir: /tests
+

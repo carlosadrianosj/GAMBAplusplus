@@ -6,6 +6,12 @@ z3-solver>=4.8.0
 # Performance and UI dependencies
 tqdm>=4.60.0  # Progress bars for parallel processing
 
+# Assembly analysis
+capstone>=5.0.0  # Instruction disassembly and decoding
+
+# Visualization
+graphviz>=0.20.0  # CFG visualization
+
 # Optional: Advanced performance optimizations
 # Uncomment the line below for JIT compilation (5-10x speedup in numerical operations)
 # numba>=0.56.0

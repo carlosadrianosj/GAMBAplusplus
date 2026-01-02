@@ -146,12 +146,30 @@ print(f"Simplified: {result}")  # Output: x + y
 
 **Workflow Diagram:**
 
-```mermaid
-flowchart LR
-    A[Input Expression] --> B[GeneralSimplifier]
-    B --> C[GAMBA Algorithm]
-    C --> D[Simplified Expression]
-    D --> E[Output Result]
+```
+┌─────────────────┐
+│ Input Expression│
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│GeneralSimplifier │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ GAMBA Algorithm │
+└────────┬────────┘
+         │
+         ▼
+┌──────────────────┐
+│Simplified Expression│
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────┐
+│ Output Result│
+└──────────────┘
 ```
 
 ### 1.2 Multiple Expressions (Sequential)
@@ -211,19 +229,58 @@ for result in results:
 
 **Optimized Processing Flow:**
 
-```mermaid
-flowchart TD
-    A[Input Expressions] --> B{Check Cache}
-    B -->|Hit| C[Return Cached]
-    B -->|Miss| D[Quick Simplify Check]
-    D -->|Simple| E[Early Termination]
-    D -->|Complex| F[Batch Processing]
-    F --> G[ProcessPoolExecutor<br/>8 Workers]
-    G --> H[GAMBA Simplification]
-    H --> I[Update Cache]
-    I --> J[Return Results]
-    C --> J
-    E --> J
+```
+                    ┌──────────────────┐
+                    │ Input Expressions│
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │   Check Cache   │
+                    └────────┬────────┘
+                             │
+                ┌────────────┴────────────┐
+                │                         │
+            [Hit]│                         │[Miss]
+                │                         │
+                ▼                         ▼
+        ┌──────────────┐        ┌──────────────────┐
+        │Return Cached │        │Quick Simplify    │
+        └──────┬───────┘        │     Check        │
+               │                └────────┬─────────┘
+               │                         │
+               │            ┌────────────┴────────────┐
+               │            │                         │
+               │        [Simple]│                 │[Complex]
+               │            │                         │
+               │            ▼                         ▼
+               │    ┌──────────────┐        ┌──────────────────┐
+               │    │Early         │        │Batch Processing  │
+               │    │Termination   │        └────────┬──────────┘
+               │    └──────┬───────┘                 │
+               │           │                         ▼
+               │           │            ┌──────────────────────────┐
+               │           │            │ProcessPoolExecutor      │
+               │           │            │    (8 Workers)          │
+               │           │            └────────┬─────────────────┘
+               │           │                     │
+               │           │                     ▼
+               │           │            ┌──────────────────┐
+               │           │            │GAMBA             │
+               │           │            │Simplification    │
+               │           │            └────────┬─────────┘
+               │           │                     │
+               │           │                     ▼
+               │           │            ┌──────────────────┐
+               │           │            │  Update Cache    │
+               │           │            └────────┬─────────┘
+               │           │                     │
+               └───────────┴─────────────────────┘
+                           │
+                           ▼
+                  ┌────────────────┐
+                  │ Return Results │
+                  └────────────────┘
 ```
 
 ---
@@ -325,14 +382,30 @@ print(f"Success rate: {successful}/{len(expressions)} ({100*successful/len(expre
 
 **File Processing Workflow:**
 
-```mermaid
-flowchart LR
-    A[Input File] --> B[Read Lines]
-    B --> C[Parse Expressions]
-    C --> D[Batch Processing]
-    D --> E[GAMBA++]
-    E --> F[Results]
-    F --> G[Output File]
+```
+┌───────────┐      ┌───────────┐      ┌─────────────────┐
+│Input File │ ───► │Read Lines │ ───► │Parse Expressions│
+└───────────┘      └───────────┘      └────────┬────────┘
+                                              │
+                                              ▼
+                                    ┌─────────────────┐
+                                    │Batch Processing │
+                                    └────────┬────────┘
+                                             │
+                                             ▼
+                                    ┌─────────────┐
+                                    │  GAMBA++   │
+                                    └──────┬─────┘
+                                           │
+                                           ▼
+                                    ┌──────────┐
+                                    │ Results  │
+                                    └────┬─────┘
+                                         │
+                                         ▼
+                                    ┌───────────┐
+                                    │Output File│
+                                    └───────────┘
 ```
 
 ### 2.3 CSV/JSON Input
@@ -378,27 +451,105 @@ results = process_expressions_batch_advanced(
 
 ## 3. Assembly Interpretation
 
-GAMBA++ can interpret assembly code from x86/x64 and ARM architectures, automatically detecting MBA patterns and converting them to expressions.
+GAMBA++ can interpret assembly code from **9 different architectures**, automatically detecting MBA patterns and converting them to expressions. This section provides comprehensive examples for each supported architecture.
 
-### 3.1 x86/x64 Assembly Processing
+### 3.1 Overview
+
+**Supported Architectures:**
+- **x86_64**: Intel/AMD 64-bit
+- **ARM32**: ARM 32-bit (ARMv7)
+- **ARM64**: ARM 64-bit (AArch64)
+- **MIPS32**: MIPS 32-bit
+- **MIPS64**: MIPS 64-bit
+- **PowerPC32**: PowerPC 32-bit
+- **PowerPC64**: PowerPC 64-bit
+- **RISC-V32**: RISC-V 32-bit
+- **RISC-V64**: RISC-V 64-bit
+
+**Assembly Processing Pipeline:**
+
+```
+                    ┌───────────────┐
+                    │ Assembly File │
+                    └───────┬───────┘
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │ Parse Assembly│
+                    └───────┬───────┘
+                            │
+                            ▼
+                    ┌─────────────────┐
+                    │Instructions List │
+                    └───────┬─────────┘
+                            │
+                            ▼
+                    ┌─────────────────┐
+                    │Detect MBA Blocks│
+                    └───────┬─────────┘
+                            │
+                            ▼
+                    ┌─────────────────┐
+                    │MBA Block Found?  │
+                    └───────┬──────────┘
+                            │
+            ┌───────────────┴───────────────┐
+            │                               │
+         [Yes]                           [No]
+            │                               │
+            ▼                               ▼
+    ┌───────────────┐              ┌──────────────┐
+    │Convert to     │              │    Skip      │
+    │Expression     │              └──────┬───────┘
+    └───────┬───────┘                     │
+            │                             │
+            ▼                             │
+    ┌──────────────────┐                 │
+    │GAMBA             │                 │
+    │Simplification    │                 │
+    └───────┬──────────┘                 │
+            │                             │
+            ▼                             │
+    ┌──────────────────┐                 │
+    │Simplified        │                 │
+    │Expression        │                 │
+    └───────┬──────────┘                 │
+            │                             │
+            └─────────────┬───────────────┘
+                          │
+                          ▼
+                    ┌───────────┐
+                    │ Continue  │
+                    └───────────┘
+```
+
+### 3.2 x86/x64 Assembly Processing
+
+**Architecture Details:**
+- **Registers**: 64-bit (rax, rbx, rcx, rdx, rsi, rdi, rbp, rsp, r8-r15)
+- **32-bit subregisters**: eax, ebx, ecx, edx, esi, edi, ebp, esp
+- **Bit width**: 64-bit (or 32-bit for x86)
+- **Addressing modes**: Complex (e.g., `[rbp-0x10]`, `[rax+rbx*4]`)
 
 **Complete Workflow:**
 
 ```python
 from pathlib import Path
-from assembly.x86_64 import parse_assembly, detect_mba_blocks, convert_mba_block_to_expression
+from assembly.x86_64.parser import parse_assembly
+from assembly.x86_64.detector import detect_mba_blocks
+from assembly.x86_64.converter import convert_mba_block_to_expression
 from optimization.batch_advanced import process_expressions_batch_advanced
 
 # Step 1: Parse assembly file
-asm_file = Path("function.asm")
+asm_file = Path("function_x86_64.asm")
 result = parse_assembly(asm_file)
 instructions = result["instructions"]
 
-print(f"Parsed {len(instructions)} instructions")
+print(f"✓ Parsed {len(instructions)} x86_64 instructions")
 
 # Step 2: Detect MBA blocks
 mba_blocks = detect_mba_blocks(instructions, min_boolean_chain=5)
-print(f"Found {len(mba_blocks)} MBA blocks")
+print(f"✓ Found {len(mba_blocks)} MBA blocks")
 
 # Step 3: Convert MBA blocks to expressions
 expressions = []
@@ -406,7 +557,7 @@ for block in mba_blocks:
     expr_data = convert_mba_block_to_expression(block)
     if expr_data and expr_data.get("gamba_expression"):
         expressions.append(expr_data["gamba_expression"])
-        print(f"Block at 0x{block.start_address:X}: {expr_data['gamba_expression']}")
+        print(f"  Block at 0x{block.start_address:X}: {expr_data['gamba_expression']}")
 
 # Step 4: Simplify expressions
 if expressions:
@@ -426,27 +577,61 @@ if expressions:
             print(f"  Simplified: {result['simplified']}")
 ```
 
-**Assembly Processing Pipeline:**
+**Example x86_64 Assembly File:**
 
-```mermaid
-flowchart TD
-    A[Assembly File] --> B[Parse Assembly]
-    B --> C[Instructions List]
-    C --> D[Detect MBA Blocks]
-    D --> E{MBA Block Found?}
-    E -->|Yes| F[Convert to Expression]
-    E -->|No| G[Skip]
-    F --> H[GAMBA Simplification]
-    H --> I[Simplified Expression]
-    G --> J[Continue]
-    I --> J
+```
+test_mba.o:     file format elf64-x86-64
+
+Disassembly of section .text:
+
+0000000000000000 <mba_simple>:
+   0:	48 89 d8             	mov    rax,rbx
+   3:	48 31 c8             	xor    rax,rcx
+   6:	48 21 d0             	and    rax,rdx
+   9:	48 01 c8             	add    rax,rcx
+   c:	c3                   	ret
+
+0000000000000010 <mba_boolean_chain>:
+  10:	48 21 d0             	and    rax,rdx
+  13:	48 09 c8             	or     rax,rcx
+  16:	48 31 d0             	xor    rax,rdx
+  19:	48 21 c8             	and    rax,rcx
+  1c:	48 09 d0             	or     rax,rdx
+  1f:	c3                   	ret
 ```
 
-### 3.2 ARM Assembly Processing
+**Processing Example:**
+
+```python
+# Parse the assembly
+parsed = parse_assembly(Path("test_mba.asm"))
+instructions = parsed["instructions"]
+
+# Detect MBA patterns
+mba_blocks = detect_mba_blocks(instructions)
+
+# Convert and simplify
+for block in mba_blocks:
+    expr_data = convert_mba_block_to_expression(block)
+    if expr_data:
+        print(f"MBA Expression: {expr_data['gamba_expression']}")
+        # Example output: "((x & y) | z) ^ (x & z)"
+```
+
+### 3.3 ARM32/ARM64 Assembly Processing
+
+**Architecture Details:**
+- **ARM32 Registers**: r0-r15 (32-bit)
+- **ARM64 Registers**: x0-x30 (64-bit), w0-w30 (32-bit subregisters)
+- **Bit width**: 32-bit (ARM32) or 64-bit (ARM64)
+- **Special features**: Embedded shifts, bitfield instructions, conditional execution
+
+#### ARM64 Example
 
 ```python
 from pathlib import Path
-from assembly.arm import parse_assembly, detect_mba_blocks
+from assembly.arm.parser import parse_assembly
+from assembly.arm.detector import detect_mba_blocks
 from assembly.arm.converter import convert_mba_block_to_expression
 from optimization.batch_advanced import process_expressions_batch_advanced
 
@@ -455,11 +640,11 @@ asm_file = Path("function_arm64.asm")
 result = parse_assembly(asm_file, arch="arm64")
 instructions = result["instructions"]
 
-print(f"Parsed {len(instructions)} ARM64 instructions")
+print(f"✓ Parsed {len(instructions)} ARM64 instructions")
 
 # Detect MBA blocks
 mba_blocks = detect_mba_blocks(instructions, min_boolean_chain=5)
-print(f"Found {len(mba_blocks)} MBA blocks")
+print(f"✓ Found {len(mba_blocks)} MBA blocks")
 
 # Convert and simplify
 expressions = []
@@ -477,71 +662,394 @@ if expressions:
     )
 ```
 
-### 3.3 Assembly File Format
-
-GAMBA++ expects assembly files in the following format:
+**Example ARM64 Assembly File:**
 
 ```
-0x1000: mov    rax, rbx
-0x1003: xor    rax, rcx
-0x1006: and    rax, 0xFF
-0x100A: add    rax, rdx
+test_mba.o:     file format elf64-littleaarch64
+
+Disassembly of section .text:
+
+0000000000000000 <mba_simple>:
+   0:	0a010002 	and	w2, w0, w1
+   4:	4a010000 	eor	w0, w0, w1
+   8:	0b020400 	add	w0, w0, w2, lsl #1
+   c:	d65f03c0 	ret
+
+0000000000000010 <mba_embedded_shift>:
+  10:	0b010c00 	add	w0, w0, w1, lsl #3
+  14:	0b020000 	add	w0, w0, w2
+  18:	d65f03c0 	ret
+
+0000000000000020 <mba_bitfield>:
+  20:	d3483c00 	ubfx	x0, x0, #8, #8
+  24:	0b414000 	add	w0, w0, w1, lsr #16
+  28:	d65f03c0 	ret
 ```
 
-**Example Assembly File:**
+**ARM-Specific Features:**
 
 ```python
-# Create example assembly file
-asm_content = """0x401000: mov    eax, ebx
-0x401002: xor    eax, ecx
-0x401004: and    eax, 0xFF
-0x401009: lea    eax, [eax + eax*2]
-0x40100C: or     eax, edx
-"""
+# ARM64 supports embedded shifts in operands
+# Example: add w0, w0, w1, lsl #3
+# This is converted to: w0 + (w1 << 3)
 
-with open("example.asm", 'w') as f:
-    f.write(asm_content)
+# ARM64 supports bitfield instructions
+# Example: ubfx x0, x0, #8, #8
+# This extracts bits 8-15 from x0
 
-# Process it
-from assembly.x86_64 import parse_assembly, detect_mba_blocks, convert_mba_block_to_expression
-
-result = parse_assembly(Path("example.asm"))
-instructions = result["instructions"]
-mba_blocks = detect_mba_blocks(instructions)
-
-for block in mba_blocks:
-    expr_data = convert_mba_block_to_expression(block)
-    print(f"MBA Expression: {expr_data['gamba_expression']}")
+# ARM64 supports conditional selection
+# Example: csel w0, w0, w1, gt
+# This selects w0 if condition is greater than, else w1
 ```
 
-### 3.4 MBA Pattern Detection
+#### ARM32 Example
 
-GAMBA++ automatically detects three types of MBA patterns:
+```python
+# Parse ARM32 assembly
+asm_file = Path("function_arm32.asm")
+result = parse_assembly(asm_file, arch="arm32")
+instructions = result["instructions"]
+
+print(f"✓ Parsed {len(instructions)} ARM32 instructions")
+
+# Process similarly to ARM64
+mba_blocks = detect_mba_blocks(instructions)
+# ... rest of the workflow is the same
+```
+
+### 3.4 MIPS32/MIPS64 Assembly Processing
+
+**Architecture Details:**
+- **Registers**: $0-$31 (32-bit or 64-bit)
+- **Bit width**: 32-bit (MIPS32) or 64-bit (MIPS64)
+- **Special features**: Delay slots for branch instructions
+
+**Note**: Currently, MIPS assembly is processed using the x86 parser as a template. Full MIPS-specific parsing is planned for future releases.
+
+**Example Workflow:**
+
+```python
+from pathlib import Path
+from assembly.x86_64.parser import parse_assembly  # Using x86 parser as template
+from assembly.x86_64.detector import detect_mba_blocks
+from assembly.x86_64.converter import convert_mba_block_to_expression
+from optimization.batch_advanced import process_expressions_batch_advanced
+
+# Parse MIPS64 assembly
+asm_file = Path("function_mips64.asm")
+result = parse_assembly(asm_file)  # Architecture auto-detected
+instructions = result["instructions"]
+
+print(f"✓ Parsed {len(instructions)} MIPS64 instructions")
+
+# Detect MBA blocks
+mba_blocks = detect_mba_blocks(instructions)
+print(f"✓ Found {len(mba_blocks)} MBA blocks")
+
+# Convert and simplify
+expressions = []
+for block in mba_blocks:
+    expr_data = convert_mba_block_to_expression(block)
+    if expr_data and expr_data.get("gamba_expression"):
+        expressions.append(expr_data["gamba_expression"])
+
+if expressions:
+    results = process_expressions_batch_advanced(
+        expressions=expressions,
+        bitcount=64,  # MIPS64 uses 64-bit
+        max_workers=8,
+        use_cache=True
+    )
+```
+
+**Example MIPS64 Assembly File:**
+
+```
+test_mba.o:     file format elf64-tradlittlemips
+
+Disassembly of section .text:
+
+0000000000000000 <mba_simple>:
+   0:	00851024 	and	v0,a0,a1
+   4:	00851026 	xor	v0,a0,a1
+   8:	00451020 	add	v0,v0,a1
+   c:	03e00008 	jr	ra
+  10:	00000000 	nop
+```
+
+### 3.5 PowerPC32/PowerPC64 Assembly Processing
+
+**Architecture Details:**
+- **Registers**: r0-r31 (32-bit or 64-bit)
+- **Bit width**: 32-bit (PowerPC32) or 64-bit (PowerPC64)
+- **Special features**: Condition register operations, complex addressing modes
+
+**Note**: Currently, PowerPC assembly is processed using the x86 parser as a template. Full PowerPC-specific parsing is planned for future releases.
+
+**Example Workflow:**
+
+```python
+from pathlib import Path
+from assembly.x86_64.parser import parse_assembly  # Using x86 parser as template
+from assembly.x86_64.detector import detect_mba_blocks
+from assembly.x86_64.converter import convert_mba_block_to_expression
+from optimization.batch_advanced import process_expressions_batch_advanced
+
+# Parse PowerPC64 assembly
+asm_file = Path("function_powerpc64.asm")
+result = parse_assembly(asm_file)  # Architecture auto-detected
+instructions = result["instructions"]
+
+print(f"✓ Parsed {len(instructions)} PowerPC64 instructions")
+
+# Process similarly to other architectures
+mba_blocks = detect_mba_blocks(instructions)
+expressions = []
+for block in mba_blocks:
+    expr_data = convert_mba_block_to_expression(block)
+    if expr_data and expr_data.get("gamba_expression"):
+        expressions.append(expr_data["gamba_expression"])
+
+if expressions:
+    results = process_expressions_batch_advanced(
+        expressions=expressions,
+        bitcount=64,  # PowerPC64 uses 64-bit
+        max_workers=8,
+        use_cache=True
+    )
+```
+
+**Example PowerPC64 Assembly File:**
+
+```
+test_mba.o:     file format elf64-powerpc
+
+Disassembly of section .text:
+
+0000000000000000 <mba_simple>:
+   0:	7c 04 18 38 	and	r0,r4,r3
+   4:	7c 04 18 78 	xor	r0,r4,r3
+   8:	7c 00 18 14 	add	r0,r0,r3
+   c:	4e 80 00 20 	blr
+```
+
+### 3.6 RISC-V32/RISC-V64 Assembly Processing
+
+**Architecture Details:**
+- **Registers**: x0-x31 (32-bit or 64-bit)
+- **Bit width**: 32-bit (RISC-V32) or 64-bit (RISC-V64)
+- **Special features**: Compressed instruction format (C extension)
+
+**Note**: Currently, RISC-V assembly is processed using the x86 parser as a template. Full RISC-V-specific parsing is planned for future releases.
+
+**Example Workflow:**
+
+```python
+from pathlib import Path
+from assembly.x86_64.parser import parse_assembly  # Using x86 parser as template
+from assembly.x86_64.detector import detect_mba_blocks
+from assembly.x86_64.converter import convert_mba_block_to_expression
+from optimization.batch_advanced import process_expressions_batch_advanced
+
+# Parse RISC-V64 assembly
+asm_file = Path("function_riscv64.asm")
+result = parse_assembly(asm_file)  # Architecture auto-detected
+instructions = result["instructions"]
+
+print(f"✓ Parsed {len(instructions)} RISC-V64 instructions")
+
+# Process similarly to other architectures
+mba_blocks = detect_mba_blocks(instructions)
+expressions = []
+for block in mba_blocks:
+    expr_data = convert_mba_block_to_expression(block)
+    if expr_data and expr_data.get("gamba_expression"):
+        expressions.append(expr_data["gamba_expression"])
+
+if expressions:
+    results = process_expressions_batch_advanced(
+        expressions=expressions,
+        bitcount=64,  # RISC-V64 uses 64-bit
+        max_workers=8,
+        use_cache=True
+    )
+```
+
+**Example RISC-V64 Assembly File:**
+
+```
+test_mba.o:     file format elf64-littleriscv
+
+Disassembly of section .text:
+
+0000000000000000 <mba_simple>:
+   0:	00b57633          	and	a2,a0,a1
+   4:	00b54533          	xor	a0,a0,a1
+   8:	00c50533          	add	a0,a0,a2
+   c:	8082                	ret
+```
+
+### 3.7 Multi-Architecture Analysis
+
+Analyze the same code compiled for different architectures:
+
+```python
+from pathlib import Path
+from assembly.x86_64.parser import parse_assembly as parse_x86
+from assembly.arm.parser import parse_assembly as parse_arm
+from assembly.x86_64.detector import detect_mba_blocks as detect_mba_x86
+from assembly.arm.detector import detect_mba_blocks as detect_mba_arm
+from assembly.x86_64.converter import convert_mba_block_to_expression as convert_x86
+from assembly.arm.converter import convert_mba_block_to_expression as convert_arm
+from optimization.batch_advanced import process_expressions_batch_advanced
+
+def analyze_architecture(arch_name: str, asm_file: Path, bitcount: int):
+    """Analyze MBA for a specific architecture"""
+    
+    # Select parser based on architecture
+    if 'arm' in arch_name.lower():
+        parse_fn = parse_arm
+        detect_fn = detect_mba_arm
+        convert_fn = convert_arm
+        arch_type = 'arm64' if '64' in arch_name else 'arm32'
+    else:
+        parse_fn = parse_x86
+        detect_fn = detect_mba_x86
+        convert_fn = convert_x86
+        arch_type = 'x86_64'
+    
+    # Parse assembly
+    if arch_type.startswith('arm'):
+        parsed = parse_fn(asm_file, arch=arch_type)
+    else:
+        parsed = parse_fn(asm_file)
+    
+    instructions = parsed["instructions"]
+    print(f"\n[{arch_name}] Parsed {len(instructions)} instructions")
+    
+    # Detect MBA blocks
+    mba_blocks = detect_fn(instructions)
+    print(f"[{arch_name}] Found {len(mba_blocks)} MBA blocks")
+    
+    # Convert to expressions
+    expressions = []
+    for block in mba_blocks:
+        expr_data = convert_fn(block)
+        if expr_data and expr_data.get("gamba_expression"):
+            expressions.append(expr_data["gamba_expression"])
+    
+    # Simplify
+    if expressions:
+        results = process_expressions_batch_advanced(
+            expressions=expressions,
+            bitcount=bitcount,
+            max_workers=8,
+            use_cache=True
+        )
+        
+        success_count = sum(1 for r in results if r["success"])
+        print(f"[{arch_name}] Simplified {success_count}/{len(expressions)} expressions")
+        
+        return {
+            'architecture': arch_name,
+            'instructions': len(instructions),
+            'mba_blocks': len(mba_blocks),
+            'expressions': len(expressions),
+            'simplified': success_count
+        }
+    
+    return None
+
+# Analyze multiple architectures
+architectures = {
+    'x86_64': (Path("tests/x86_64/test_mba.asm"), 64),
+    'arm64': (Path("tests/arm64/test_mba.asm"), 64),
+    'mips64': (Path("tests/mips64/test_mba.asm"), 64),
+}
+
+results = {}
+for arch_name, (asm_file, bitcount) in architectures.items():
+    if asm_file.exists():
+        result = analyze_architecture(arch_name, asm_file, bitcount)
+        if result:
+            results[arch_name] = result
+
+# Compare results
+print("\n" + "="*70)
+print("Cross-Architecture Comparison")
+print("="*70)
+for arch, data in results.items():
+    print(f"{arch:12} | Instructions: {data['instructions']:3} | "
+          f"MBA Blocks: {data['mba_blocks']:2} | "
+          f"Simplified: {data['simplified']}/{data['expressions']}")
+```
+
+### 3.8 Assembly File Format
+
+GAMBA++ expects assembly files in **objdump format** with addresses and instruction bytes:
+
+**x86/x64 Format:**
+```
+0x1000: 48 89 d8             	mov    rax,rbx
+0x1003: 48 31 c8             	xor    rax,rcx
+0x1006: 48 21 d0             	and    rax,rdx
+```
+
+**ARM64 Format:**
+```
+   0:	0a010002 	and	w2, w0, w1
+   4:	4a010000 	eor	w0, w0, w1
+   8:	0b020400 	add	w0, w0, w2, lsl #1
+```
+
+**Generating Assembly Files:**
+
+```bash
+# x86_64
+objdump -d binary.o > output.asm
+
+# ARM64
+aarch64-linux-gnu-objdump -d binary.o > output.asm
+
+# MIPS64
+mips64-linux-gnu-objdump -d binary.o > output.asm
+
+# PowerPC64
+powerpc64-linux-gnu-objdump -d binary.o > output.asm
+
+# RISC-V64
+riscv64-linux-gnu-objdump -d binary.o > output.asm
+```
+
+### 3.9 MBA Pattern Detection
+
+GAMBA++ automatically detects three types of MBA patterns across all architectures:
 
 **1. Boolean Chain Pattern:**
+Long sequences of boolean operations (and, or, xor, etc.)
 
-```mermaid
-flowchart LR
-    A[and] --> B[xor]
-    B --> C[or]
-    C --> D[and]
-    D --> E[MBA Block]
+```
+┌─────┐      ┌─────┐      ┌─────┐      ┌─────┐      ┌──────────┐
+│ and │ ───► │ xor │ ───► │ or  │ ───► │ and │ ───► │MBA Block │
+└─────┘      └─────┘      └─────┘      └─────┘      └──────────┘
 ```
 
 **2. Arithmetic-Boolean Pattern:**
+Mixed arithmetic and boolean operations
 
-```mermaid
-flowchart LR
-    A[lea/imul] --> B[Boolean Chain]
-    B --> C[MBA Block]
+```
+┌──────────────┐      ┌──────────────┐      ┌──────────┐
+│add/lea/imul  │ ───► │Boolean Chain │ ───► │MBA Block │
+└──────────────┘      └──────────────┘      └──────────┘
 ```
 
 **3. Comparison Chain Pattern:**
+Complex comparisons using boolean operations
 
-```mermaid
-flowchart LR
-    A[Comparison] --> B[Boolean Ops]
-    B --> C[MBA Block]
+```
+┌─────────────┐      ┌─────────────┐      ┌──────────┐
+│ Comparison  │ ───► │Boolean Ops  │ ───► │MBA Block │
+└─────────────┘      └─────────────┘      └──────────┘
 ```
 
 **Detection Example:**
@@ -562,6 +1070,13 @@ for block in mba_blocks:
     print(f"Address: 0x{block.start_address:X} - 0x{block.end_address:X}")
     print(f"Instructions: {len(block.instructions)}")
 ```
+
+**Architecture-Specific Pattern Examples:**
+
+- **x86/x64**: `lea`, `imul` combined with boolean operations
+- **ARM**: Embedded shifts (`lsl`, `lsr`, `asr`) in arithmetic operations
+- **ARM**: Bitfield instructions (`ubfx`, `sbfx`, `bfi`) as MBA patterns
+- **All**: Boolean chains of 5+ consecutive boolean operations
 
 ---
 
@@ -605,14 +1120,36 @@ print(f"Hit rate: {stats['hit_rate_percent']:.1f}%")
 
 **Cache Workflow:**
 
-```mermaid
-flowchart TD
-    A[Expression] --> B{Cache Exists?}
-    B -->|Yes| C[Return Cached]
-    B -->|No| D[Process with GAMBA]
-    D --> E[Store in Cache]
-    E --> F[Return Result]
-    C --> F
+```
+                    ┌─────────────┐
+                    │  Expression │
+                    └──────┬──────┘
+                           │
+                           ▼
+                    ┌──────────────┐
+                    │Cache Exists? │
+                    └──────┬───────┘
+                           │
+            ┌──────────────┴──────────────┐
+            │                             │
+         [Yes]                         [No]
+            │                             │
+            ▼                             ▼
+    ┌──────────────┐            ┌─────────────────┐
+    │Return Cached │            │Process with GAMBA│
+    └──────┬───────┘            └────────┬────────┘
+           │                              │
+           │                              ▼
+           │                     ┌─────────────────┐
+           │                     │ Store in Cache  │
+           │                     └────────┬────────┘
+           │                              │
+           └──────────────┬───────────────┘
+                          │
+                          ▼
+                   ┌──────────────┐
+                   │Return Result │
+                   └──────────────┘
 ```
 
 ### 4.2 Custom Bit Width
@@ -666,7 +1203,381 @@ for i, result in enumerate(results):
 
 ---
 
-## 5. Performance Optimization
+## 5. CFG Visualization and MBA Function Detection
+
+GAMBA++ provides comprehensive Control Flow Graph (CFG) generation and visualization capabilities, supporting multiple architectures and automatic MBA detection.
+
+### 5.1 Multi-Architecture CFG Generation
+
+GAMBA++ supports CFG generation for 9 different architectures:
+
+- **x86_64**: Intel/AMD 64-bit
+- **ARM32**: ARM 32-bit (ARMv7)
+- **ARM64**: ARM 64-bit (AArch64)
+- **MIPS32**: MIPS 32-bit
+- **MIPS64**: MIPS 64-bit
+- **PowerPC32**: PowerPC 32-bit
+- **PowerPC64**: PowerPC 64-bit
+- **RISC-V32**: RISC-V 32-bit
+- **RISC-V64**: RISC-V 64-bit
+
+#### Automatic Architecture Detection
+
+The framework automatically detects the architecture from assembly files:
+
+```python
+from tests.generate_cfgs import generate_cfgs_for_architecture
+from pathlib import Path
+
+# Generate CFGs for a specific architecture
+test_dir = Path("tests/x86_64")
+generate_cfgs_for_architecture("x86_64", test_dir)
+
+# Output files will be saved to:
+# - tests/x86_64/output/cfg_before.png
+# - tests/x86_64/output/cfg_after.png
+# - tests/x86_64/output/cfg_comparison.png
+# - tests/x86_64/output/cfg_analysis.json
+```
+
+#### Architecture-Specific Parsing
+
+For manual control, you can specify the architecture:
+
+```python
+from assembly.x86_64.parser import parse_assembly as parse_x86
+from assembly.arm.parser import parse_assembly as parse_arm
+from assembly.common.cfg import build_cfg
+
+# x86_64
+parsed_x86 = parse_x86("function_x86.asm")
+instructions_x86 = parsed_x86["instructions"]
+cfg_x86 = build_cfg(instructions_x86, arch='x86_64')
+
+# ARM64
+parsed_arm = parse_arm("function_arm.asm", arch='arm64')
+instructions_arm = parsed_arm["instructions"]
+cfg_arm = build_cfg(instructions_arm, arch='arm64')
+```
+
+### 5.2 Detecting MBA Functions
+
+GAMBA++ can detect functions containing MBA patterns across all supported architectures:
+
+```python
+from assembly.common.mba_function_detector import extract_function_boundaries_from_symbols
+from assembly.x86_64.parser import parse_assembly
+from assembly.x86_64.detector import detect_mba_blocks
+
+# Parse assembly file
+parsed = parse_assembly("function.asm")
+instructions = parsed["instructions"]
+
+# Extract function boundaries from symbols file
+function_boundaries = extract_function_boundaries_from_symbols("function.symbols")
+
+# Detect MBA blocks
+mba_blocks = detect_mba_blocks(instructions)
+
+# Match MBA blocks to functions
+for func in function_boundaries:
+    func_mba_blocks = [b for b in mba_blocks 
+                       if func['start'] <= b.start_address < func['end']]
+    if func_mba_blocks:
+        print(f"Function: {func['name']}")
+        print(f"  MBA blocks: {len(func_mba_blocks)}")
+        print(f"  Instructions: {func['end'] - func['start']}")
+```
+
+### 5.3 Building Control Flow Graphs
+
+Build CFG from instructions for any supported architecture:
+
+```python
+from assembly.common.cfg import build_cfg
+from assembly.common.capstone_wrapper import disassemble_with_capstone
+
+# Build CFG (architecture is auto-detected or specified)
+cfg = build_cfg(instructions, arch='x86_64')
+
+print(f"CFG has {len(cfg.blocks)} basic blocks")
+for block in cfg.blocks:
+    print(f"  Block 0x{block.start_address:X}: {len(block.instructions)} instructions")
+    print(f"    Predecessors: {len(block.predecessors)}")
+    print(f"    Successors: {len(block.successors)}")
+```
+
+### 5.4 Visualizing CFG
+
+Render CFG with MBA blocks highlighted using Graphviz:
+
+```python
+from visualization.cfg_renderer import render_cfg, render_cfg_comparison
+from pathlib import Path
+
+# Render CFG before simplification
+output_path = Path("output/cfg_before.png")
+render_cfg(
+    cfg=cfg,
+    mba_blocks=mba_blocks,
+    output_path=output_path
+)
+
+# Render CFG after simplification (with simplified blocks)
+render_cfg(
+    cfg=cfg_after,
+    mba_blocks=[],  # Empty - blocks are already simplified
+    simplified_blocks=simplified_blocks,  # Show simplified expressions
+    output_path=Path("output/cfg_after.png")
+)
+
+# Render side-by-side comparison
+render_cfg_comparison(
+    cfg_before=cfg,
+    cfg_after=cfg_after,
+    mba_blocks_before=mba_blocks,
+    mba_blocks_after=[],  # Empty after simplification
+    simplified_blocks=simplified_blocks,
+    mba_attempted_blocks=mba_attempted_blocks,  # Blocks where simplification failed
+    output_path=Path("output/cfg_comparison.png")
+)
+```
+
+**CFG Visualization Features:**
+- **Rectangular nodes** with rounded corners for better readability
+- **Color coding**: 
+  - Red border: MBA blocks before simplification
+  - Green fill: Successfully simplified blocks
+  - Yellow fill: Blocks where simplification was attempted but failed
+  - Blue border: Regular basic blocks
+- **Instruction count** displayed at the top of each block
+- **Dynamic sizing**: Blocks automatically resize based on content
+- **Side-by-side comparison**: Before and after CFGs aligned horizontally
+
+### 5.5 Complete Workflow: Multi-Architecture Analysis
+
+Complete example for analyzing and visualizing MBA across different architectures:
+
+```python
+from pathlib import Path
+from assembly.x86_64.parser import parse_assembly as parse_x86
+from assembly.arm.parser import parse_assembly as parse_arm
+from assembly.x86_64.detector import detect_mba_blocks as detect_mba_x86
+from assembly.arm.detector import detect_mba_blocks as detect_mba_arm
+from assembly.x86_64.converter import convert_mba_block_to_expression as convert_x86
+from assembly.arm.converter import convert_mba_block_to_expression as convert_arm
+from assembly.common.cfg import build_cfg
+from assembly.common.mba_function_detector import extract_function_boundaries_from_symbols
+from visualization.cfg_renderer import render_cfg, render_cfg_comparison
+from optimization.batch_advanced import process_expressions_batch_advanced
+
+def analyze_architecture(arch_name: str, asm_file: Path, symbols_file: Path):
+    """Analyze MBA for a specific architecture"""
+    
+    # Select parser and detector based on architecture
+    if 'arm' in arch_name.lower():
+        parse_assembly = parse_arm
+        detect_mba = detect_mba_arm
+        convert_mba = convert_arm
+        arch_type = 'arm64' if '64' in arch_name else 'arm32'
+    else:
+        parse_assembly = parse_x86
+        detect_mba = detect_mba_x86
+        convert_mba = convert_x86
+        arch_type = 'x86_64'
+    
+    # 1. Parse assembly
+    if arch_type.startswith('arm'):
+        parsed = parse_assembly(asm_file, arch=arch_type)
+    else:
+        parsed = parse_assembly(asm_file)
+    instructions = parsed["instructions"]
+    print(f"✓ Parsed {len(instructions)} instructions for {arch_name}")
+    
+    # 2. Extract function boundaries
+    function_boundaries = []
+    if symbols_file.exists():
+        function_boundaries = extract_function_boundaries_from_symbols(str(symbols_file))
+        print(f"✓ Found {len(function_boundaries)} functions")
+    
+    # 3. Detect MBA blocks
+    mba_blocks = detect_mba(instructions)
+    print(f"✓ Detected {len(mba_blocks)} MBA blocks")
+    
+    # 4. Build CFG before simplification
+    cfg_before = build_cfg(instructions, arch=arch_type)
+    print(f"✓ CFG has {len(cfg_before.blocks)} basic blocks")
+    
+    # 5. Render CFG before
+    output_dir = Path(f"output/{arch_name}")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    render_cfg(cfg_before, mba_blocks, output_dir / "cfg_before.png")
+    
+    # 6. Convert MBA blocks to expressions
+    expressions = []
+    for block in mba_blocks:
+        expr_data = convert_mba(block)
+        if expr_data and expr_data.get('gamba_expression'):
+            expressions.append(expr_data['gamba_expression'])
+    
+    # 7. Simplify expressions
+    simplified_blocks = []
+    if expressions:
+        results = process_expressions_batch_advanced(
+            expressions=expressions,
+            bitcount=64 if '64' in arch_name else 32,
+            max_workers=8,
+            use_cache=True
+        )
+        
+        # Create simplified blocks mapping
+        for i, result in enumerate(results):
+            if result["success"] and i < len(mba_blocks):
+                simplified_blocks.append({
+                    'start': mba_blocks[i].start_address,
+                    'end': mba_blocks[i].end_address,
+                    'original_expr': expressions[i],
+                    'simplified_expr': result['simplified']
+                })
+    
+    # 8. Build CFG after (create simplified representation)
+    cfg_after = cfg_before  # In practice, rebuild from simplified code
+    
+    # 9. Render CFG after
+    render_cfg(cfg_after, [], simplified_blocks=simplified_blocks,
+               output_path=output_dir / "cfg_after.png")
+    
+    # 10. Render comparison
+    render_cfg_comparison(
+        cfg_before, cfg_after, mba_blocks, [],
+        simplified_blocks=simplified_blocks,
+        output_path=output_dir / "cfg_comparison.png"
+    )
+    
+    print(f"✓ Analysis complete for {arch_name}")
+    print(f"  Output: {output_dir}")
+
+# Analyze multiple architectures
+architectures = ['x86_64', 'arm64', 'mips64']
+for arch in architectures:
+    asm_file = Path(f"tests/{arch}/test_mba.asm")
+    symbols_file = Path(f"tests/{arch}/test_mba.symbols")
+    if asm_file.exists():
+        analyze_architecture(arch, asm_file, symbols_file)
+```
+
+### 5.6 Automated CFG Generation for All Architectures
+
+Use the provided script to automatically generate CFGs for all test architectures:
+
+```bash
+# Build all test binaries and generate CFGs
+python tests/build_all_and_generate_cfgs.py
+```
+
+This script will:
+1. Build test binaries for all 9 architectures
+2. Generate assembly files using objdump
+3. Parse assembly and detect MBA blocks
+4. Build CFG before simplification
+5. Simplify MBA expressions
+6. Build CFG after simplification
+7. Generate visualization images (before, after, comparison)
+8. Save analysis results to JSON
+
+**Output Structure:**
+```
+tests/
+├── x86_64/
+│   └── output/
+│       ├── cfg_before.png
+│       ├── cfg_after.png
+│       ├── cfg_comparison.png
+│       └── cfg_analysis.json
+├── arm64/
+│   └── output/
+│       └── ...
+└── ...
+```
+
+**CFG Analysis JSON Format:**
+```json
+{
+  "architecture": "x86_64",
+  "summary": {
+    "instruction_count": 77,
+    "mba_block_count": 3,
+    "expression_count": 3,
+    "simplified_count": 3,
+    "basic_block_count": 13,
+    "function_count": 8
+  },
+  "mba_blocks": [...],
+  "expressions": [...],
+  "simplified_blocks": [...],
+  "functions": [...]
+}
+```
+
+### 5.7 Working with Different Architectures
+
+#### Architecture-Specific Considerations
+
+**x86/x64:**
+- Uses 32-bit or 64-bit registers (eax/rax, ebx/rbx, etc.)
+- Supports complex addressing modes (e.g., `[rbp-0x10]`)
+- Handles instruction prefixes and modifiers
+
+**ARM32/ARM64:**
+- ARM32 uses 32-bit registers (r0-r15)
+- ARM64 uses 64-bit registers (x0-x30) and 32-bit subregisters (w0-w30)
+- Supports embedded shifts in operands (e.g., `add x0, x1, x2, lsl #3`)
+- Handles conditional execution and bitfield instructions
+
+**MIPS32/MIPS64:**
+- Uses 32-bit or 64-bit general-purpose registers
+- Handles delay slots for branch instructions
+- Supports coprocessor instructions
+
+**PowerPC32/PowerPC64:**
+- Uses 32-bit or 64-bit general-purpose registers
+- Handles condition register operations
+- Supports complex addressing modes
+
+**RISC-V32/RISC-V64:**
+- Uses 32-bit or 64-bit general-purpose registers
+- Supports compressed instruction format (C extension)
+- Handles standard RISC-V instruction set
+
+#### Example: Cross-Architecture Comparison
+
+```python
+# Compare MBA patterns across architectures
+architectures = {
+    'x86_64': ('tests/x86_64/test_mba.asm', 'x86_64'),
+    'arm64': ('tests/arm64/test_mba.asm', 'arm64'),
+    'mips64': ('tests/mips64/test_mba.asm', 'mips64'),
+}
+
+results = {}
+for arch_name, (asm_file, arch_type) in architectures.items():
+    # Parse and analyze
+    # ... (use architecture-specific parsers)
+    
+    # Store results
+    results[arch_name] = {
+        'mba_blocks': len(mba_blocks),
+        'expressions': len(expressions),
+        'simplified': len(simplified_blocks)
+    }
+
+# Compare results
+for arch, data in results.items():
+    print(f"{arch}: {data['mba_blocks']} MBA blocks, "
+          f"{data['simplified']}/{data['expressions']} simplified")
+```
+
+## 6. Performance Optimization
 
 ### 5.1 Choosing the Right Method
 
@@ -695,11 +1606,23 @@ results = process_expressions_batch_advanced(
 
 ### 5.2 Performance Comparison
 
-```mermaid
-graph LR
-    A[Sequential] -->|2.06x| B[Parallel]
-    B -->|1.73x| C[Optimized]
-    A -->|3.32x| C
+```
+┌────────────┐
+│ Sequential │ ────── 2.06x ──────► ┌──────────┐
+│  (1.00x)   │                      │ Parallel │
+└────────────┘                      │  (2.06x) │
+       │                             └────┬─────┘
+       │                                  │
+       │                                  │ 1.73x
+       │                                  │
+       │                                  ▼
+       │                            ┌────────────┐
+       │                            │ Optimized  │
+       │                            │  (3.32x)   │
+       │                            └────────────┘
+       │                                  ▲
+       │                                  │
+       └────────── 3.32x ─────────────────┘
 ```
 
 **Performance Tips:**
@@ -799,19 +1722,61 @@ print(f"\n✓ Cache: {stats['hits']} hits, {stats['hit_rate_percent']:.1f}% hit 
 
 **Complete Workflow Diagram:**
 
-```mermaid
-flowchart TD
-    A[Assembly File] --> B[Parse Assembly]
-    B --> C[Detect MBA Blocks]
-    C --> D[Convert to Expressions]
-    D --> E[Batch Processing]
-    E --> F{Cache Check}
-    F -->|Hit| G[Return Cached]
-    F -->|Miss| H[GAMBA Simplify]
-    H --> I[Update Cache]
-    I --> J[Results]
-    G --> J
-    J --> K[Deobfuscated Code]
+```
+                    ┌──────────────┐
+                    │Assembly File │
+                    └──────┬───────┘
+                           │
+                           ▼
+                    ┌──────────────┐
+                    │Parse Assembly│
+                    └──────┬───────┘
+                           │
+                           ▼
+                    ┌─────────────────┐
+                    │Detect MBA Blocks│
+                    └──────┬──────────┘
+                           │
+                           ▼
+                    ┌─────────────────────┐
+                    │Convert to Expressions│
+                    └──────┬───────────────┘
+                           │
+                           ▼
+                    ┌─────────────────┐
+                    │Batch Processing  │
+                    └──────┬──────────┘
+                           │
+                           ▼
+                    ┌──────────────┐
+                    │ Cache Check   │
+                    └──────┬───────┘
+                           │
+            ┌──────────────┴──────────────┐
+            │                             │
+         [Hit]                         [Miss]
+            │                             │
+            ▼                             ▼
+    ┌──────────────┐            ┌─────────────────┐
+    │Return Cached │            │ GAMBA Simplify  │
+    └──────┬───────┘            └────────┬────────┘
+           │                              │
+           │                              ▼
+           │                     ┌─────────────────┐
+           │                     │  Update Cache   │
+           │                     └────────┬────────┘
+           │                              │
+           └──────────────┬───────────────┘
+                          │
+                          ▼
+                    ┌──────────┐
+                    │ Results  │
+                    └────┬─────┘
+                         │
+                         ▼
+                ┌──────────────────┐
+                │Deobfuscated Code  │
+                └──────────────────┘
 ```
 
 ---

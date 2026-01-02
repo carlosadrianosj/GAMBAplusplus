@@ -1,0 +1,7 @@
+0000000000000000 T main
+0000000000000050 T mba_arithmetic_boolean
+0000000000000020 T mba_bitfield
+0000000000000040 T mba_boolean_chain
+0000000000000030 T mba_conditional
+0000000000000010 T mba_embedded_shift
+0000000000000000 T mba_simple

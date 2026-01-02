@@ -50,10 +50,10 @@ def parse_assembly_file(asm_file: Path) -> List[Instruction]:
     with open(asm_file, 'r') as f:
         lines = f.readlines()
     
-    # Pattern to match: 0xADDRESS: instruction
-    # Example: 0xb09790: push    rbp
+    # Pattern to match: 0xADDRESS: instruction or ADDRESS: instruction
+    # Example: 0xb09790: push    rbp or 00000000: push    rbp
     instruction_pattern = re.compile(
-        r'^(0x[0-9a-fA-F]+):\s+(.+)$'
+        r'^([0-9a-fA-F]+):\s+(.+)$'
     )
     
     for line_num, line in enumerate(lines, 1):
@@ -72,7 +72,11 @@ def parse_assembly_file(asm_file: Path) -> List[Instruction]:
         instruction_str = match.group(2).strip()
         
         try:
-            address = int(address_str, 16)
+            # Handle both 0x prefix and plain hex
+            if address_str.startswith('0x'):
+                address = int(address_str, 16)
+            else:
+                address = int(address_str, 16)
         except ValueError:
             continue
         
